@@ -103,15 +103,20 @@ class StockChecker:
                     # First run
                     logger.info("First run for product '%s' (%s). State: %s", product.name, slug, new_state.value)
                     if new_state == StockState.IN_STOCK:
-                        self.notifier.notify_stock_transition(
-                            product_name=product.name,
-                            product_url=product.url,
-                            old_state=None,
-                            new_state=new_state,
-                            pincode=self.config.location.pincode,
-                            check_time=check_time,
-                            is_first_run=True,
-                        )
+                        try:
+                            self.notifier.notify_stock_transition(
+                                product_name=product.name,
+                                product_url=product.url,
+                                old_state=None,
+                                new_state=new_state,
+                                pincode=self.config.location.pincode,
+                                check_time=check_time,
+                                is_first_run=True,
+                            )
+                        except Exception as notif_err:
+                            logger.error("Failed to send first-run notification for '%s': %s", product.name, notif_err)
+                            has_product_failure = True
+                            product_failure_reasons.append(f"Telegram delivery failed for '{product.name}': {notif_err}")
                     # Persist known state
                     state.products[slug] = ProductStateEntry(state=new_state, checked_at=iso_now)
 
@@ -125,15 +130,20 @@ class StockChecker:
                             old_state.value if old_state else "None",
                             new_state.value,
                         )
-                        self.notifier.notify_stock_transition(
-                            product_name=product.name,
-                            product_url=product.url,
-                            old_state=old_state,
-                            new_state=new_state,
-                            pincode=self.config.location.pincode,
-                            check_time=check_time,
-                            is_first_run=False,
-                        )
+                        try:
+                            self.notifier.notify_stock_transition(
+                                product_name=product.name,
+                                product_url=product.url,
+                                old_state=old_state,
+                                new_state=new_state,
+                                pincode=self.config.location.pincode,
+                                check_time=check_time,
+                                is_first_run=False,
+                            )
+                        except Exception as notif_err:
+                            logger.error("Failed to send transition notification for '%s': %s", product.name, notif_err)
+                            has_product_failure = True
+                            product_failure_reasons.append(f"Telegram delivery failed for '{product.name}': {notif_err}")
                         state.products[slug] = ProductStateEntry(state=new_state, checked_at=iso_now)
                     else:
                         # State unchanged
@@ -155,14 +165,17 @@ class StockChecker:
                 state.consecutive_failures >= self.config.monitor.failure_warning_threshold
                 and not state.failure_warning_sent
             ):
-                self.notifier.notify_failure_warning(
-                    consecutive_failures=state.consecutive_failures,
-                    threshold=self.config.monitor.failure_warning_threshold,
-                    last_error_message=combined_reason,
-                    pincode=self.config.location.pincode,
-                    check_time=check_time,
-                )
-                state.failure_warning_sent = True
+                try:
+                    self.notifier.notify_failure_warning(
+                        consecutive_failures=state.consecutive_failures,
+                        threshold=self.config.monitor.failure_warning_threshold,
+                        last_error_message=combined_reason,
+                        pincode=self.config.location.pincode,
+                        check_time=check_time,
+                    )
+                    state.failure_warning_sent = True
+                except Exception as notif_err:
+                    logger.error("Failed to send failure warning: %s", notif_err)
 
             self.state_manager.save_state(state)
             return 1
@@ -170,11 +183,14 @@ class StockChecker:
         else:
             # Complete check success
             if state.failure_warning_sent:
-                self.notifier.notify_recovery(
-                    resolved_after_failures=state.consecutive_failures,
-                    pincode=self.config.location.pincode,
-                    check_time=check_time,
-                )
+                try:
+                    self.notifier.notify_recovery(
+                        resolved_after_failures=state.consecutive_failures,
+                        pincode=self.config.location.pincode,
+                        check_time=check_time,
+                    )
+                except Exception as notif_err:
+                    logger.error("Failed to send recovery notification: %s", notif_err)
 
             state.consecutive_failures = 0
             state.failure_warning_sent = False
