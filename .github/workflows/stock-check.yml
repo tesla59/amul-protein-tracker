@@ -2,8 +2,8 @@ name: Amul Stock Monitor
 
 on:
   schedule:
-    # Run every hour at minute 0 (UTC). Note that GitHub scheduled actions are best-effort.
-    - cron: '0 * * * *'
+    # Run every hour at minute 15 (UTC) to avoid global top-of-hour congestion on GitHub Actions
+    - cron: '15 * * * *'
   workflow_dispatch:
     inputs:
       verify_only:
