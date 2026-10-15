@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "amul-protein-tracker"
+version = "0.1.0"
+description = "Automated Amul Protein stock monitor with transition-only Telegram alerts"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [
+    {name = "Lead Engineer"}
+]
+dependencies = [
+    "requests>=2.28.0",
+    "pyyaml>=6.0",
+    "beautifulsoup4>=4.11.0",
+    "python-dotenv>=1.0.0"
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0"
+]
+
+[project.scripts]
+amul-tracker = "amul_tracker.main:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]

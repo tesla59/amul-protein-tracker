@@ -1,0 +1,108 @@
+name: Amul Stock Monitor
+
+on:
+  schedule:
+    # Run every hour at minute 0 (UTC). Note that GitHub scheduled actions are best-effort.
+    - cron: '0 * * * *'
+  workflow_dispatch:
+    inputs:
+      verify_only:
+        description: 'Run in diagnostic verify-only mode (no alerts, no state update)'
+        required: false
+        default: false
+        type: boolean
+
+concurrency:
+  group: amul-stock-monitor
+  cancel-in-progress: false
+
+jobs:
+  check-stock:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code repository
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install .
+
+      - name: Retrieve state from stock-state branch
+        id: get_state
+        run: |
+          git fetch origin stock-state:stock-state 2>/dev/null || true
+          if git rev-parse --verify stock-state >/dev/null 2>&1; then
+            git show stock-state:state.json > state.json 2>/dev/null || echo "{}" > state.json
+            echo "Loaded existing state.json from stock-state branch."
+          else
+            echo "{}" > state.json
+            echo "No existing stock-state branch found. Initialized new state.json."
+          fi
+
+      - name: Run stock monitor
+        id: run_monitor
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          if [ "${{ inputs.verify_only }}" = "true" ]; then
+            python -m amul_tracker.main --verify-only -c config/products.yaml
+          else
+            # Run checker and capture exit code
+            set +e
+            python -m amul_tracker.main -c config/products.yaml -s state.json
+            CHECKER_EXIT_CODE=$?
+            echo "CHECKER_EXIT_CODE=${CHECKER_EXIT_CODE}" >> $GITHUB_ENV
+            set -e
+          fi
+
+      - name: Persist updated state to stock-state branch
+        if: ${{ inputs.verify_only != true }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Create a separate worktree or switch to stock-state branch to commit state.json
+          TEMP_STATE_DIR=$(mktemp -d)
+          cp state.json "$TEMP_STATE_DIR/state.json"
+
+          # Check if stock-state branch exists locally or on remote
+          if git show-ref --quiet refs/heads/stock-state; then
+            git checkout stock-state
+          else
+            git checkout --orphan stock-state
+            git rm -rf . >/dev/null 2>&1 || true
+          fi
+
+          cp "$TEMP_STATE_DIR/state.json" state.json
+          git add state.json
+
+          if git diff --staged --quiet; then
+            echo "State has not changed. Skipping commit."
+          else
+            git commit -m "Update stock state [skip ci]"
+            git push origin stock-state
+            echo "Pushed updated state to stock-state branch."
+          fi
+          rm -rf "$TEMP_STATE_DIR"
+
+      - name: Enforce checker exit status
+        if: ${{ inputs.verify_only != true }}
+        run: |
+          if [ "${{ env.CHECKER_EXIT_CODE }}" != "0" ]; then
+            echo "Stock check reported failures (exit code: ${{ env.CHECKER_EXIT_CODE }})."
+            exit ${{ env.CHECKER_EXIT_CODE }}
+          fi
