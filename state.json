@@ -1,1 +1,16 @@
-{"schema_version": 1, "last_successful_check": null, "consecutive_failures": 0, "failure_warning_sent": false, "products": {}}
+{
+  "schema_version": 1,
+  "last_successful_check": "2026-10-15T15:30:50.616163+00:00",
+  "consecutive_failures": 0,
+  "failure_warning_sent": false,
+  "products": {
+    "amul-high-protein-buttermilk-200-ml-or-pack-of-30": {
+      "state": "IN_STOCK",
+      "checked_at": "2026-10-15T15:30:50.616163+00:00"
+    },
+    "amul-high-protein-rose-lassi-200-ml-or-pack-of-30": {
+      "state": "OUT_OF_STOCK",
+      "checked_at": "2026-10-15T15:30:50.616163+00:00"
+    }
+  }
+}
