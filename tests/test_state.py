@@ -25,6 +25,18 @@ def test_missing_state_file_initializes_empty(tmp_path: Path):
     assert state.products == {}
 
 
+def test_empty_dict_state_file_initializes_empty(tmp_path: Path):
+    state_file = tmp_path / "state.json"
+    state_file.write_text("{}")
+    mgr = StateManager(state_file)
+
+    state = mgr.load_state()
+    assert state.schema_version == 1
+    assert state.consecutive_failures == 0
+    assert state.failure_warning_sent is False
+    assert state.products == {}
+
+
 def test_save_and_load_state(tmp_path: Path):
     state_file = tmp_path / "state.json"
     mgr = StateManager(state_file)

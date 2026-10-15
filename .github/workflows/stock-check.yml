@@ -45,11 +45,13 @@ jobs:
         run: |
           git fetch origin stock-state:stock-state 2>/dev/null || true
           if git rev-parse --verify stock-state >/dev/null 2>&1; then
-            git show stock-state:state.json > state.json 2>/dev/null || echo "{}" > state.json
-            echo "Loaded existing state.json from stock-state branch."
+            git show stock-state:state.json > state.json 2>/dev/null || true
+          fi
+          if [ ! -f state.json ] || [ ! -s state.json ] || [ "$(cat state.json)" = "{}" ]; then
+            echo '{"schema_version": 1, "last_successful_check": null, "consecutive_failures": 0, "failure_warning_sent": false, "products": {}}' > state.json
+            echo "Initialized fresh state.json with schema v1."
           else
-            echo "{}" > state.json
-            echo "No existing stock-state branch found. Initialized new state.json."
+            echo "Loaded existing state.json from stock-state branch."
           fi
 
       - name: Run stock monitor

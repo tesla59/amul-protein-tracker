@@ -76,6 +76,9 @@ class TrackerState:
         if not isinstance(data, dict):
             raise StateCorruptionError("State data root must be a dictionary")
 
+        if not data:
+            return TrackerState()
+
         schema_ver = data.get("schema_version")
         if schema_ver != SCHEMA_VERSION:
             raise StateCorruptionError(f"Unsupported schema version: {schema_ver} (expected {SCHEMA_VERSION})")
@@ -120,8 +123,8 @@ class StateManager:
         try:
             content = self.state_file_path.read_text(encoding="utf-8")
             self._initial_json_content = content
-            if not content.strip():
-                logger.warning("State file %s is empty. Initializing fresh state.", self.state_file_path)
+            if not content.strip() or content.strip() == "{}":
+                logger.warning("State file %s is empty or uninitialized. Initializing fresh state.", self.state_file_path)
                 return TrackerState()
 
             data = json.loads(content)
