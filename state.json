@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "last_successful_check": "2026-10-20T19:11:04.696546+00:00",
+  "last_successful_check": "2026-10-20T22:15:52.902296+00:00",
   "consecutive_failures": 0,
   "failure_warning_sent": false,
   "products": {
@@ -10,11 +10,11 @@
     },
     "amul-high-protein-plain-lassi-200-ml-or-pack-of-30": {
       "state": "OUT_OF_STOCK",
-      "checked_at": "2026-10-20T19:11:04.696546+00:00"
+      "checked_at": "2026-10-20T22:15:52.902296+00:00"
     },
     "amul-high-protein-rose-lassi-200-ml-or-pack-of-30": {
       "state": "OUT_OF_STOCK",
-      "checked_at": "2026-10-20T19:11:04.696546+00:00"
+      "checked_at": "2026-10-20T22:15:52.902296+00:00"
     }
   }
 }
