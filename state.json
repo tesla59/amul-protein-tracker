@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "last_successful_check": "2026-11-04T02:16:15.310444+00:00",
-  "consecutive_failures": 0,
+  "consecutive_failures": 1,
   "failure_warning_sent": false,
   "products": {
     "amul-high-protein-buttermilk-200-ml-or-pack-of-30": {
